@@ -2,13 +2,15 @@
 
 Maintain is a maintenance-management web application for asset records, service requests, work orders, technician assignment, inspection checklists, stock movements and reservations, dashboard KPIs, in-app notifications, audit history, and private attachments.
 
+The public home page explains these capabilities and accepts service inquiries. Inquiry submissions are stored in PostgreSQL for administrator review; no email or external notification is sent. The authenticated maintenance workspace remains role-protected.
+
 **Status:** production-oriented implementation in progress; **not yet production-ready**. PostgreSQL-backed workflows, authentication, deployment files, and tests are implemented, but database-backed migration/integration and browser E2E checks remain blocked on the current host lacking PostgreSQL/Docker. Read [implementation status](docs/IMPLEMENTATION_STATUS.md) and [security limitations](docs/SECURITY.md) before using real data.
 
 ## Application
 
 The active app lives in [`web/`](web/). It uses Next.js App Router, TypeScript, Tailwind CSS, Prisma, PostgreSQL, Zod, Vitest, and Playwright. PostgreSQL is used in local development and deployment to avoid maintaining divergent database schemas and to provide production-grade transactional concurrency. SQLite is not currently supported.
 
-For setup, database migration, and initial administrator bootstrap, see [Setup and installation](docs/SETUP_AND_INSTALLATION.md). For a containerized local run, see [Deployment](docs/DEPLOYMENT.md). No deployment or external notification is performed by this project.
+For automated setup, database migration, and initial administrator bootstrap, see [Setup and installation](docs/SETUP_AND_INSTALLATION.md). For a containerized local run, see [Deployment](docs/DEPLOYMENT.md). No deployment or external notification is performed by this project.
 
 ## Project artifacts
 

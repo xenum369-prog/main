@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Bell, Boxes, ClipboardList, Gauge, LogOut, Plus, Users, Wrench } from "lucide-react";
+import { Activity, Bell, Boxes, ClipboardList, Gauge, LogOut, Mail, Plus, Users, Wrench } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type UserInfo = { id: string; name: string; role: "ADMIN" | "MANAGER" | "TECHNICIAN" | "REQUESTER"; location: string };
@@ -11,10 +11,10 @@ type DashboardData = {
   recentAudit: { id: string; action: string; entityType: string; createdAt: string; actor: { name: string } | null }[];
 };
 type Row = Record<string, unknown> & { id: string };
-type Tab = "overview" | "requests" | "work-orders" | "assets" | "inventory" | "users";
+type Tab = "overview" | "requests" | "work-orders" | "assets" | "inventory" | "users" | "contact";
 const text = {
-  en: { overview: "Overview", requests: "Requests", orders: "Work orders", assets: "Assets", inventory: "Inventory", users: "Users", signout: "Sign out", empty: "Nothing to show yet.", loadError: "Unable to load workspace data." },
-  ar: { overview: "نظرة عامة", requests: "الطلبات", orders: "أوامر العمل", assets: "الأصول", inventory: "المخزون", users: "المستخدمون", signout: "تسجيل الخروج", empty: "لا توجد بيانات بعد.", loadError: "تعذر تحميل بيانات مساحة العمل." },
+  en: { overview: "Overview", requests: "Requests", orders: "Work orders", assets: "Assets", inventory: "Inventory", users: "Users", contact: "Contact inquiries", signout: "Sign out", empty: "Nothing to show yet.", loadError: "Unable to load workspace data." },
+  ar: { overview: "نظرة عامة", requests: "الطلبات", orders: "أوامر العمل", assets: "الأصول", inventory: "المخزون", users: "المستخدمون", contact: "استفسارات التواصل", signout: "تسجيل الخروج", empty: "لا توجد بيانات بعد.", loadError: "تعذر تحميل بيانات مساحة العمل." },
 };
 
 function key() { return crypto.randomUUID(); }
@@ -40,6 +40,7 @@ export default function Dashboard({ initialUser }: { initialUser: UserInfo }) {
     { id: "assets" as const, label: t.assets, icon: Boxes },
     { id: "inventory" as const, label: t.inventory, icon: Activity },
     ...(initialUser.role === "ADMIN" ? [{ id: "users" as const, label: t.users, icon: Users }] : []),
+    ...(initialUser.role === "ADMIN" ? [{ id: "contact" as const, label: t.contact, icon: Mail }] : []),
   ].filter((item) => initialUser.role !== "REQUESTER" || item.id === "overview" || item.id === "requests"), [initialUser.role, t]);
 
   const refresh = useCallback(async () => {
@@ -48,7 +49,8 @@ export default function Dashboard({ initialUser }: { initialUser: UserInfo }) {
       : tab === "requests" ? "/api/requests"
         : tab === "work-orders" ? "/api/work-orders"
           : tab === "assets" ? "/api/assets"
-            : tab === "users" ? "/api/users" : "/api/inventory";
+            : tab === "users" ? "/api/users"
+              : tab === "contact" ? "/api/contact" : "/api/inventory";
     const [dashboard, notificationResult] = await Promise.all([
       fetch("/api/dashboard").then((response) => response.ok ? response.json() : Promise.reject()),
       fetch("/api/notifications").then((response) => response.ok ? response.json() : { notifications: [] }),
@@ -59,7 +61,7 @@ export default function Dashboard({ initialUser }: { initialUser: UserInfo }) {
       const response = await fetch(listUrl);
       if (!response.ok) throw new Error("Unable to load list");
       const result = await response.json();
-      const property = tab === "requests" ? "requests" : tab === "work-orders" ? "workOrders" : tab === "assets" ? "assets" : tab === "users" ? "users" : "parts";
+      const property = tab === "requests" ? "requests" : tab === "work-orders" ? "workOrders" : tab === "assets" ? "assets" : tab === "users" ? "users" : tab === "contact" ? "inquiries" : "parts";
       setRows(result[property] ?? []);
     } else {
       setRows([]);
@@ -171,12 +173,23 @@ export default function Dashboard({ initialUser }: { initialUser: UserInfo }) {
         {tab === "assets" && <div className="space-y-5">{canManage && <AssetForm onSubmit={(event) => submitForm(event, "/api/assets", (form) => ({ code: form.get("code"), name: form.get("name"), category: form.get("category"), criticality: form.get("criticality") }))} busy={busy} />}{rows.length ? <div className="overflow-x-auto rounded-2xl border border-[var(--line)] bg-white"><table className="w-full min-w-[760px] text-start text-sm"><thead className="bg-[#f7faf8]"><tr>{["Asset", "Code", "Category", "Criticality", "Status", "Files"].map((item) => <th key={item} className="px-4 py-3 font-medium text-[var(--muted)]">{item}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t border-[var(--line)]"><td className="px-4 py-3 font-medium">{String(row.name)}</td><td className="px-4 py-3">{String(row.code)}</td><td className="px-4 py-3">{String(row.category)}</td><td className="px-4 py-3">{String(row.criticality)}</td><td className="px-4 py-3">{String(row.status)}</td><td className="px-4 py-3"><Attachments entityType="Asset" entityId={row.id} /></td></tr>)}</tbody></table></div> : <Empty text={t.empty} />}</div>}
         {tab === "inventory" && <div className="space-y-5">{canManage && <PartForm onSubmit={(event) => submitForm(event, "/api/inventory", (form) => ({ sku: form.get("sku"), name: form.get("name"), openingQuantity: Number(form.get("openingQuantity")), reorderPoint: Number(form.get("reorderPoint") ) }))} busy={busy} />}{rows.length ? <div className="space-y-3">{rows.map((row) => <article key={row.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white p-5"><div><h2 className="font-semibold">{String(row.name)}</h2><p className="text-sm text-[var(--muted)]">{String(row.sku)} · On hand: {String(row.quantityOnHand)} · Reserved: {String(row.reservedQuantity)} · Available: {String(row.availableQuantity)} · Reorder at: {String(row.reorderPoint)}</p><MovementHistory partId={row.id} /></div>{canManage && <MovementForm busy={busy} onSubmit={(event) => submitForm(event, "/api/inventory/movements", (form) => ({ partId: row.id, type: form.get("type"), quantity: Number(form.get("quantity")), reason: form.get("reason") }))} />}</article>)}</div> : <Empty text={t.empty} />}</div>}
         {tab === "users" && initialUser.role === "ADMIN" && <UsersPanel actorId={initialUser.id} rows={rows} busy={busy} onCreate={(event) => submitForm(event, "/api/users", (form) => ({ name: form.get("name"), email: form.get("email"), password: form.get("password"), role: form.get("role") }))} onUpdate={(id, body) => mutate(`/api/users/${id}`, "PATCH", body)} />}
+        {tab === "contact" && initialUser.role === "ADMIN" && <ContactInquiries rows={rows} />}
       </section>
     </div>
   </main>;
 }
 
 function Empty({ text }: { text: string }) { return <p className="rounded-2xl border border-dashed border-[var(--line)] bg-white p-8 text-center text-sm text-[var(--muted)]">{text}</p>; }
+function ContactInquiries({ rows }: { rows: Row[] }) {
+  return rows.length ? <div className="space-y-3">{rows.map((row) => <article key={row.id} className="rounded-2xl border border-[var(--line)] bg-white p-5">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><h2 className="font-semibold">{String(row.name)}</h2><p className="mt-1 text-sm text-[var(--muted)]">{String(row.organization ?? "Organization not provided")} · {String(row.service)}</p></div>
+      <time className="text-sm text-[var(--muted)]">{new Date(String(row.createdAt)).toLocaleString()}</time>
+    </div>
+    <a href={`mailto:${encodeURIComponent(String(row.email))}`} className="mt-3 inline-block text-sm font-medium text-[var(--green-dark)] underline">{String(row.email)}</a>
+    <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{String(row.message)}</p>
+  </article>)}</div> : <Empty text="No contact inquiries yet." />;
+}
 function StatusBadge({ value }: { value: string }) { const tone = ["REJECTED", "URGENT"].includes(value) ? "bg-red-50 text-red-800" : ["SUBMITTED", "APPROVED", "OPEN", "IN_PROGRESS", "HIGH"].includes(value) ? "bg-amber-50 text-amber-800" : ["COMPLETED", "VERIFIED", "CLOSED", "LOW"].includes(value) ? "bg-green-50 text-green-900" : "bg-slate-100 text-slate-700"; return <span role="status" className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${tone}`}>{value.replaceAll("_", " ")}</span>; }
 function RequestForm({ onSubmit, busy }: { onSubmit: (event: FormEvent<HTMLFormElement>) => void; busy: boolean }) { const [assets, setAssets] = useState<{ id: string; code: string; name: string }[]>([]); useEffect(() => { fetch("/api/assets").then((response) => response.ok ? response.json() : Promise.reject()).then((result) => setAssets(result.assets)).catch(() => setAssets([])); }, []); return <form onSubmit={onSubmit} className="grid gap-3 rounded-2xl border border-[var(--line)] bg-white p-5 sm:grid-cols-2"><h2 className="sm:col-span-2 font-semibold">Submit a maintenance request</h2><input name="title" required minLength={3} maxLength={120} placeholder="Request title" className="rounded-lg border border-[var(--line)] px-3 py-2" /><select name="priority" className="rounded-lg border border-[var(--line)] px-3 py-2"><option value="MEDIUM">Medium priority</option><option value="LOW">Low</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select><select name="assetId" defaultValue="" className="rounded-lg border border-[var(--line)] px-3 py-2 sm:col-span-2"><option value="">No asset linked</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.code} · {asset.name}</option>)}</select><textarea name="description" required minLength={5} maxLength={4000} placeholder="Describe the issue" className="min-h-24 rounded-lg border border-[var(--line)] px-3 py-2 sm:col-span-2" /><button disabled={busy} className="flex items-center justify-center gap-2 rounded-lg bg-[var(--green)] px-4 py-2 text-white sm:col-span-2"><Plus size={16} />Submit request</button></form>; }
 function AssetForm({ onSubmit, busy }: { onSubmit: (event: FormEvent<HTMLFormElement>) => void; busy: boolean }) { return <form onSubmit={onSubmit} className="grid gap-3 rounded-2xl border border-[var(--line)] bg-white p-5 sm:grid-cols-5"><h2 className="font-semibold sm:col-span-5">Register asset</h2><input name="code" required placeholder="Code" className="rounded-lg border border-[var(--line)] px-3 py-2" /><input name="name" required placeholder="Asset name" className="rounded-lg border border-[var(--line)] px-3 py-2" /><input name="category" required placeholder="Category" className="rounded-lg border border-[var(--line)] px-3 py-2" /><select name="criticality" className="rounded-lg border border-[var(--line)] px-3 py-2"><option>MEDIUM</option><option>LOW</option><option>HIGH</option><option>CRITICAL</option></select><button disabled={busy} className="rounded-lg bg-[var(--green)] px-3 py-2 text-white">Add asset</button></form>; }

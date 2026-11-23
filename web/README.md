@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Maintain web application
 
-## Getting Started
+The public root page presents the maintenance platform and provides a contact form. The authenticated maintenance dashboard is served at `/` only for active sessions; otherwise it is not exposed and APIs continue to enforce server-side authorization. Contact inquiries are stored in PostgreSQL and visible to organization administrators in the authenticated dashboard. No email or other external notification is configured.
 
-First, run the development server:
+## Automatic local setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Requirements: Node.js 22+ and npm. The simplest local path also requires Docker with Compose:
+
+```powershell
+npm.cmd run setup:local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```sh
+npm run setup:local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This installs the locked dependencies, creates `web/.env` from the example if needed, generates random local-only session/database secrets in that ignored file, starts the PostgreSQL container, validates settings, generates Prisma Client, and applies migrations. It does not create an administrator or seed demo data.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+For an existing PostgreSQL database, set `DATABASE_URL` and `SESSION_SECRET` in `.env`, then run `npm.cmd run setup` on Windows or `npm run setup` on Unix. This path installs dependencies, validates the environment, generates Prisma Client, and applies migrations to the configured database.
 
-## Learn More
+After migrations, explicitly bootstrap an administrator with `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` in the environment, then run `npm run admin:bootstrap`. To add disposable demo records, explicitly set `NODE_ENV=development`, `ENABLE_DEMO_SEED=true`, and `DEMO_SEED_PASSWORD` before `npm run db:seed:demo`. Never run demo seeding against real data.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`../docs/SETUP_AND_INSTALLATION.md`](../docs/SETUP_AND_INSTALLATION.md) for PowerShell and Unix commands, environment requirements, and limitations. Production deployments must configure their own secrets, PostgreSQL, private persistent attachment storage, TLS proxy, backups, and monitoring.

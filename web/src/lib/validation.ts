@@ -41,3 +41,11 @@ export const movementSchema = z.object({
   reason: z.string().trim().min(2).max(300),
   workOrderId: uuidSchema.optional(),
 });
+export const contactInquirySchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  organization: z.string().trim().max(120).optional().transform((value) => value || null),
+  service: z.enum(["Asset reliability", "Work management", "Inventory control", "Team coordination", "General inquiry"]),
+  message: z.string().trim().min(10).max(3000),
+  website: z.string().max(200).optional(),
+});
