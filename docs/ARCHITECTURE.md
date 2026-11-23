@@ -22,6 +22,8 @@ Browser ── same-origin Next.js pages/API ──> Session + server RBAC
 
 Server components and route handlers read the signed-opaque session cookie and resolve a database session whose stored token is HMAC-digested. Passwords are bcrypt-hashed. Mutation APIs check request origin, validate bounded JSON input, and enforce role and location boundaries before touching records.
 
+Anonymous visitors receive a public product homepage and a contact form. The contact route validates and rate-limits submissions and stores them in PostgreSQL; only administrators can read the inbox. This does not send outbound notifications. Signed-in users at the root path receive the role-aware dashboard; protected APIs remain server-authorized.
+
 ## Domain and boundaries
 
 - Organizations own users, locations, assets, requests, work orders, parts, audit events, idempotency records, and attachments.
@@ -30,6 +32,7 @@ Server components and route handlers read the signed-opaque session cookie and r
 - Work-order lifecycle changes use an explicit state-transition table. Completing work requires a completion note and completion of each checklist item.
 - Part quantities are changed only in transactions that create an inventory movement and audit event. Reservations are unique per part/work order; issues check available stock and consume the reservation when present. PostgreSQL check constraints guard non-negative stock, positive movement quantities, reservation quantities, and attachment sizes.
 - Dashboard counts are queried from PostgreSQL; no fixed demo KPI data is returned.
+- Public contact inquiries are independent of tenant operating records, contain only submitted contact details/service interest/message, and are listed only to admins. A separate forward-only migration adds the inquiry table. There is no outbound delivery or configured retention job.
 - Notifications are in-app only. No email, SMS, webhook, or external provider is configured.
 - Attachments are limited to signature-checked PDF/JPEG/PNG files up to 10 MiB. Downloads are authorized and served as attachments with `nosniff` and `no-store`.
 

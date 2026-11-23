@@ -70,7 +70,7 @@ export default function ContactForm() {
         <button disabled={busy} className="w-full rounded-lg bg-emerald-800 px-4 py-3 font-semibold text-white hover:bg-emerald-900 disabled:cursor-wait disabled:opacity-70">
           {busy ? "Sending…" : "Send inquiry"}
         </button>
-        <p className="mt-3 text-xs leading-5 text-slate-500">By submitting, you agree that your details may be used to respond to this inquiry. Data is retained in this workspace database until handled under your organization’s retention policy.</p>
+        <p className="mt-3 text-xs leading-5 text-slate-500">Your details are stored in this workspace for administrator review and response. Retention periods depend on the operator; automatic deletion is not configured.</p>
       </div>
     </form>
   );

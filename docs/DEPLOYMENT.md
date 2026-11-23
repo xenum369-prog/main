@@ -4,13 +4,19 @@ No live deployment has been performed. The container files are a local/starting 
 
 ## Local Compose
 
-From `web/`, create `.env` from `.env.example`, then replace placeholders. For Compose, use a unique URL-safe `POSTGRES_PASSWORD` (for example 32 random base64url bytes) and a separate `SESSION_SECRET` with at least 32 characters. Compose supplies the internal PostgreSQL connection string using the `db` service name.
+From `web/`, `npm run setup:local` installs dependencies, creates a local `.env` with unique generated development secrets, provisions PostgreSQL, and applies migrations. To run the full app in Compose instead, use the same local-only setup and then:
 
 ```powershell
 docker compose --env-file .env up --build
 ```
 
+```sh
+docker compose --env-file .env up --build
+```
+
 Compose starts PostgreSQL, waits for its health check, runs `prisma migrate deploy` in a one-shot migrator, then starts the app. The app and DB ports bind only to `127.0.0.1`; access the app at <http://127.0.0.1:3000>. Persistent named volumes hold PostgreSQL data and private attachments.
+
+Generated credentials in local `.env` are for development only; never use them in production. For the PowerShell/npm setup steps and existing PostgreSQL setup, see [Setup and installation](SETUP_AND_INSTALLATION.md).
 
 To bootstrap the first admin after migration, set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` in `.env`, then run:
 

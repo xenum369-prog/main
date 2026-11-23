@@ -177,7 +177,7 @@ export default function PublicHome() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-[.12em] text-emerald-200">Let’s talk maintenance</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Tell us what your operation needs.</h2>
-            <p className="mt-4 max-w-lg leading-7 text-emerald-100/80">Share a few details and our team can follow up. Your inquiry is stored securely for an administrator to review; no external email or notification provider is configured.</p>
+            <p className="mt-4 max-w-lg leading-7 text-emerald-100/80">Share a few details for an administrator to review. Your inquiry is stored securely in this workspace; no external email or notification provider is configured.</p>
             <p className="mt-6 text-sm text-emerald-100/70">Please don’t include passwords, sensitive personal information, or urgent safety reports.</p>
           </div>
           <ContactForm />

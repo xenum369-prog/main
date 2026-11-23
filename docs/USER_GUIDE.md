@@ -1,5 +1,9 @@
 # User guide
 
+## Public homepage and contact
+
+The public homepage describes the maintenance platform's capabilities, scope, and illustrative request-to-close workflow. Its example is not a customer case study or performance claim. Use **Sign in** to access an existing account, or submit the contact form to send an inquiry to the app database. An administrator reviews submissions in the protected **Contact inquiries** dashboard view and can respond using their configured mail client. Submitting a form does not send an email, create a maintenance request, or guarantee a response time.
+
 ## Sign in
 
 Use the email and password provided by your administrator. There are no shared/default production credentials. Sessions expire after eight hours; use **Sign out** on shared devices.

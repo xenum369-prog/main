@@ -70,6 +70,13 @@ async function main() {
   if (Number(process.versions.node.split(".")[0]) < 22) {
     throw new Error("Node.js 22 or newer is required. Install Node.js, then rerun this setup.");
   }
+  if (withDatabase) {
+    try {
+      await run("docker", ["compose", "version"], true);
+    } catch {
+      throw new Error("Docker Compose is required for setup:local. Install Docker Desktop/Compose or use npm run setup with an existing PostgreSQL database.");
+    }
+  }
 
   const envFile = path.join(root, ".env");
   if (!(await exists(envFile))) {

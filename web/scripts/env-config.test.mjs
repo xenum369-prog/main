@@ -3,7 +3,7 @@ import path from "node:path";
 import { parseEnvFile, validateEnvironment } from "./env-config.mjs";
 
 const validEnv = {
-  DATABASE_URL: "postgresql://maintenance:a-unique-password@localhost:5432/maintenance?schema=public",
+  DATABASE_URL: "postgresql://maintenance:a-unique-local-postgres-password@localhost:5432/maintenance?schema=public",
   SESSION_SECRET: "a-unique-session-secret-that-is-at-least-32-characters",
   POSTGRES_PASSWORD: "a-unique-local-postgres-password",
 };

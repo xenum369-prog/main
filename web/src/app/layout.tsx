@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Maintain | Maintenance Operations",
-  description: "Work orders, assets, requests, and inventory in one maintenance workspace.",
+  description: "Connect maintenance requests, work orders, assets, technicians, and inventory in one accountable operations workspace.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

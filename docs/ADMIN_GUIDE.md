@@ -14,6 +14,12 @@ Role capabilities are enforced in API handlers, not only hidden in navigation. A
 
 `npm run db:seed:demo` requires both `NODE_ENV=development` and `ENABLE_DEMO_SEED=true`, plus an explicit `DEMO_SEED_PASSWORD` of at least 14 characters. It refuses to run when any user exists. Demo emails end in `example.invalid`. Never seed a production database.
 
+## Public contact inquiries
+
+The public homepage accepts maintenance-platform inquiries. Submissions are stored in the `Contact inquiries` dashboard view, available only to organization administrators, with the supplied contact details, service interest, message, and submission time. The public endpoint validates inputs, uses a hidden honeypot, and applies a database-backed limit of five inquiries per client IP per hour. This limit depends on the trusted reverse proxy's `X-Forwarded-For` handling.
+
+There is no automated email or CRM integration. Administrators can reply using their configured mail client; provider configuration and any inquiry retention/deletion workflow must be supplied by the organization. Tell visitors accurately that submission records an inquiry; it does not guarantee a response time or emergency service.
+
 ## Operations
 
 - Keep `DATABASE_URL`, `SESSION_SECRET`, and `STORAGE_DIR` in secret/config management.

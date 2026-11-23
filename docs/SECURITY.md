@@ -5,6 +5,7 @@
 - Password hashes use bcrypt (12 rounds); there are no committed production passwords or default accounts.
 - Opaque random session tokens are stored as HMAC digests, expire after eight hours, and are placed in HttpOnly, SameSite=Lax cookies. Production uses Secure and the `__Host-` cookie prefix. Logout deletes the current DB session.
 - Login failures are generic and compared against a dummy bcrypt hash. A PostgreSQL-backed 10-attempt / 15-minute limit is keyed by a secret digest of client IP and normalized email.
+- Public contact submissions are validated, capped by field length and request-size limits, filtered by an unexposed honeypot, and limited to five per client IP per hour using a secret-digested rate-limit bucket. Only administrators can read the stored inquiry inbox.
 - Mutations require same-origin requests in production and JSON APIs are capped at 64 KiB before parsing. Zod schemas constrain user-controlled fields.
 - Every handler enforces authentication, role, organization and location scope on the server. Request ownership and technician assignment are separately enforced where applicable.
 - Business-changing flows use database transactions, unique constraints, state checks, and idempotency records. Stock cannot become negative; work-order request conversion is unique.
@@ -20,6 +21,7 @@
 - Attachment virus/malware scanning, quarantine, object-storage integration, deletion/retention management, and shared-volume behavior across multiple app instances are absent.
 - MFA, SSO, self-service password reset/change, account lockout, and external identity provisioning are not implemented. Admin-created credentials must be delivered through an approved out-of-band channel and reset under the organization's policy.
 - Audit and idempotency rows have no automated retention/cleanup policy; expired sessions are ignored but not periodically purged. Login rate-limit rows are pruned on authentication requests.
+- Contact inquiries contain personal contact data. No automated retention/deletion process, consent-management tooling, privacy-policy page, email delivery, or CRM integration is implemented; operators must define retention and privacy handling before collecting real leads.
 - No external security assessment, penetration test, operational monitoring/alerting, incident response test, or formal accessibility/security certification has been performed.
 
 This document describes implementation intent and known controls; it is not a security certification or guarantee of production readiness.
