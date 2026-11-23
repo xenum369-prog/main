@@ -25,6 +25,8 @@ async function exists(file) {
 async function prepareLocalSecrets() {
   const envFile = path.join(root, ".env");
   let contents = await readFile(envFile, "utf8");
+  const originalContents = contents;
+  contents = contents.replace(/\r\n?/g, "\n");
   const values = parseEnvFile(contents);
   const production = process.env.NODE_ENV === "production" || values.NODE_ENV === "production";
   if (production) return;
@@ -59,7 +61,7 @@ async function prepareLocalSecrets() {
     const expression = new RegExp(`^\\s*${key}\\s*=.*$`, "m");
     contents = expression.test(contents) ? contents.replace(expression, line) : `${contents.trimEnd()}\n${line}\n`;
   }
-  if (Object.keys(updates).length) {
+  if (Object.keys(updates).length || contents !== originalContents) {
     await writeFile(envFile, contents, { mode: 0o600 });
     if (!windows) await chmod(envFile, 0o600);
     console.log("Generated unique local-only secret values in ignored web/.env; no secret values were displayed.");

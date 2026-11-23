@@ -2,6 +2,7 @@
 data/runtime/
 .test-state/
 *.tmp
+.tools/
 web/node_modules/
 web/.next/
 web/.env
