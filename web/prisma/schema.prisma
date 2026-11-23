@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Attachment {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  locationId     String       @db.Uuid
+  uploaderId     String       @db.Uuid
+  entityType     String
+  entityId       String       @db.Uuid
+  originalName   String
+  storageKey     String       @unique
+  mimeType       String
+  size           Int
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  uploader       User         @relation("AttachmentUploader", fields: [uploaderId], references: [id], onDelete: Restrict)
+  @@index([organizationId, locationId, entityType, entityId])
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  TECHNICIAN
+  REQUESTER
+}
+
+enum RequestStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CONVERTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  VERIFIED
+  CLOSED
+}
+
+enum MovementType {
+  RECEIPT
+  ISSUE
+  RESERVATION
+  RELEASE
+  ADJUSTMENT
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+  locations Location[]
+  users     User[]
+  assets    Asset[]
+  requests  MaintenanceRequest[]
+  workOrders WorkOrder[]
+  parts     Part[]
+  auditEvents AuditEvent[]
+  attachments Attachment[]
+  idempotencyRecords IdempotencyRecord[]
+}
+
+model Location {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User[]
+  assets         Asset[]
+  requests       MaintenanceRequest[]
+  workOrders     WorkOrder[]
+  parts          Part[]
+  attachments  Attachment[]
+  auditEvents    AuditEvent[]
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model User {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  locationId     String?      @db.Uuid
+  email          String @unique
+  name           String
+  passwordHash   String
+  role           Role         @default(REQUESTER)
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  sessions       Session[]
+  requests       MaintenanceRequest[] @relation("Requester")
+  assignedOrders WorkOrder[]  @relation("AssignedTechnician")
+  notifications  Notification[]
+  auditEvents    AuditEvent[]
+  uploadedAttachments Attachment[] @relation("AttachmentUploader")
+  @@index([organizationId, locationId, role])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  tokenHash String   @unique
+  userId    String   @db.Uuid
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([expiresAt])
+}
+
+model Asset {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  locationId     String       @db.Uuid
+  code           String
+  name           String
+  category       String
+  status         String       @default("OPERATIONAL")
+  criticality    String       @default("MEDIUM")
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  requests       MaintenanceRequest[]
+  workOrders     WorkOrder[]
+  @@unique([organizationId, code])
+  @@index([organizationId, locationId])
+}
+
+model MaintenanceRequest {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @db.Uuid
+  locationId     String        @db.Uuid
+  requesterId    String        @db.Uuid
+  assetId        String?       @db.Uuid
+  title          String
+  description    String
+  priority       Priority      @default(MEDIUM)
+  status         RequestStatus @default(SUBMITTED)
+  decisionNote   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location      @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  requester      User          @relation("Requester", fields: [requesterId], references: [id], onDelete: Restrict)
+  asset          Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  workOrder      WorkOrder?
+  notifications  Notification[]
+  @@index([organizationId, locationId, status, createdAt])
+}
+
+model WorkOrder {
+  id             String          @id @default(uuid()) @db.Uuid
+  organizationId String          @db.Uuid
+  locationId     String          @db.Uuid
+  requestId      String?         @unique @db.Uuid
+  assetId        String?         @db.Uuid
+  assignedUserId String?         @db.Uuid
+  title          String
+  description    String
+  status         WorkOrderStatus @default(OPEN)
+  checklist      Json            @default("[]")
+  completionNote String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  request        MaintenanceRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  asset          Asset?          @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  assignedUser   User?           @relation("AssignedTechnician", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  reservations   Reservation[]
+  notifications  Notification[]
+  @@index([organizationId, locationId, status, assignedUserId])
+}
+
+model Part {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  locationId     String       @db.Uuid
+  sku            String
+  name           String
+  quantityOnHand Int          @default(0)
+  reorderPoint   Int          @default(0)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  movements      InventoryMovement[]
+  reservations   Reservation[]
+  @@unique([organizationId, sku])
+  @@index([organizationId, locationId, name])
+}
+
+model InventoryMovement {
+  id             String       @id @default(uuid()) @db.Uuid
+  partId         String       @db.Uuid
+  actorId        String       @db.Uuid
+  workOrderId    String?      @db.Uuid
+  type           MovementType
+  quantity       Int
+  reason         String
+  createdAt      DateTime     @default(now())
+  part           Part         @relation(fields: [partId], references: [id], onDelete: Restrict)
+  @@index([partId, createdAt])
+}
+
+model Reservation {
+  id          String   @id @default(uuid()) @db.Uuid
+  partId      String   @db.Uuid
+  workOrderId String   @db.Uuid
+  quantity    Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  part        Part     @relation(fields: [partId], references: [id], onDelete: Restrict)
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  @@unique([partId, workOrderId])
+  @@index([partId, active])
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  requestId String?  @db.Uuid
+  workOrderId String? @db.Uuid
+  message   String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  request   MaintenanceRequest? @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  workOrder WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  @@index([userId, readAt, createdAt])
+}
+
+model AuditEvent {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  locationId     String?      @db.Uuid
+  actorId        String?      @db.Uuid
+  action         String
+  entityType     String
+  entityId       String
+  details        Json
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  actor          User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model IdempotencyRecord {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  key            String
+  requestHash    String
+  response       Json
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  @@unique([organizationId, key])
+}
+
+model LoginRateLimit {
+  bucket    String   @id
+  count     Int      @default(0)
+  windowEnd DateTime
+}
