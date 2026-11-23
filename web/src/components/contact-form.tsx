@@ -40,7 +40,7 @@ export default function ContactForm() {
       </div>
       <div>
         <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium">Work email</label>
-        <input id="contact-email" name="email" type="email" autoComplete="email" required maxLength={254} className="w-full rounded-lg border border-slate-300 px-3 py-2.5" />
+        <input suppressHydrationWarning id="contact-email" name="email" type="email" autoComplete="email" required maxLength={254} className="w-full rounded-lg border border-slate-300 px-3 py-2.5" />
       </div>
       <div>
         <label htmlFor="contact-organization" className="mb-1.5 block text-sm font-medium">Organization <span className="text-slate-500">(optional)</span></label>
